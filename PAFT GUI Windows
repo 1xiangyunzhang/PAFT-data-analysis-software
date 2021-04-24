@@ -1,0 +1,186 @@
+# -*- coding: utf-8 -*-
+
+import wx
+import wx.xrc
+
+###########################################################################
+## Class MyFrame1
+###########################################################################
+
+class MyFrame1 ( wx.Frame ):
+
+	def __init__( self, parent ):
+		wx.Frame.__init__ ( self, parent, id = wx.ID_ANY, title = u"Prism Analysis", pos = wx.DefaultPosition, size = wx.Size( 1527,787 ), style = wx.DEFAULT_FRAME_STYLE|wx.HSCROLL|wx.TAB_TRAVERSAL|wx.VSCROLL )
+
+		self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
+		self.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_BTNFACE ) )
+
+		bSizer58 = wx.BoxSizer( wx.VERTICAL )
+
+		fgSizer6 = wx.FlexGridSizer( 0, 0, 0, 0 )
+		fgSizer6.SetFlexibleDirection( wx.BOTH )
+		fgSizer6.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+
+		bSizer22 = wx.BoxSizer( wx.VERTICAL )
+
+		self.slop_switch = wx.CheckBox( self, wx.ID_ANY, u"Negative Slop", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.slop_switch.SetValue(True)
+		bSizer22.Add( self.slop_switch, 1, wx.ALL|wx.EXPAND, 5 )
+
+		self.display_extremum = wx.CheckBox( self, wx.ID_ANY, u"Display Extremum", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.display_extremum.SetValue(True)
+		bSizer22.Add( self.display_extremum, 1, wx.ALL|wx.EXPAND, 5 )
+
+		self.display_fitting_range = wx.CheckBox( self, wx.ID_ANY, u"Display Fitting Range", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.display_fitting_range.SetValue(True)
+		bSizer22.Add( self.display_fitting_range, 1, wx.ALL|wx.EXPAND, 5 )
+
+
+		fgSizer6.Add( bSizer22, 1, wx.EXPAND, 5 )
+
+		gSizer1 = wx.GridSizer( 0, 4, 0, 0 )
+
+		gSizer1.SetMinSize( wx.Size( 5,-1 ) )
+		self.fitting = wx.StaticText( self, wx.ID_ANY, u"Fitting Range", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.fitting.Wrap( -1 )
+
+		gSizer1.Add( self.fitting, 1, wx.ALL|wx.EXPAND, 5 )
+
+		self.limit_lift = wx.TextCtrl( self, wx.ID_ANY, u"1", wx.DefaultPosition, wx.DefaultSize, 0 )
+		gSizer1.Add( self.limit_lift, 1, wx.ALL|wx.EXPAND, 5 )
+
+		self.limit_right = wx.TextCtrl( self, wx.ID_ANY, u"-1", wx.DefaultPosition, wx.DefaultSize, 0 )
+		gSizer1.Add( self.limit_right, 1, wx.ALL|wx.EXPAND, 5 )
+
+		self.μm = wx.StaticText( self, wx.ID_ANY, u"μm", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.μm.Wrap( -1 )
+
+		gSizer1.Add( self.μm, 0, wx.ALL, 5 )
+
+		self.measuring = wx.StaticText( self, wx.ID_ANY, u"Measuring Range", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.measuring.Wrap( -1 )
+
+		gSizer1.Add( self.measuring, 1, wx.ALL|wx.EXPAND, 5 )
+
+		self.range_low = wx.TextCtrl( self, wx.ID_ANY, u"0", wx.DefaultPosition, wx.DefaultSize, 0 )
+		gSizer1.Add( self.range_low, 1, wx.ALL|wx.EXPAND, 5 )
+
+		self.range_high = wx.TextCtrl( self, wx.ID_ANY, u"50", wx.DefaultPosition, wx.DefaultSize, 0 )
+		gSizer1.Add( self.range_high, 1, wx.ALL|wx.EXPAND, 5 )
+
+		self.micron = wx.StaticText( self, wx.ID_ANY, u"mm", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.micron.Wrap( -1 )
+
+		gSizer1.Add( self.micron, 0, wx.ALL, 5 )
+
+		self.searching = wx.StaticText( self, wx.ID_ANY, u"Searching Range", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.searching.Wrap( -1 )
+
+		gSizer1.Add( self.searching, 1, wx.ALL|wx.EXPAND, 5 )
+
+		self.Search_size = wx.TextCtrl( self, wx.ID_ANY, u"285", wx.DefaultPosition, wx.DefaultSize, 0 )
+		gSizer1.Add( self.Search_size, 1, wx.ALL|wx.EXPAND, 5 )
+
+
+		fgSizer6.Add( gSizer1, 1, wx.EXPAND, 5 )
+
+		bSizer32 = wx.BoxSizer( wx.VERTICAL )
+
+		self.filename = wx.FilePickerCtrl( self, wx.ID_ANY, wx.EmptyString, u"Select a file", u"*.*", wx.DefaultPosition, wx.DefaultSize, wx.FLP_DEFAULT_STYLE )
+		bSizer32.Add( self.filename, 0, wx.ALL|wx.EXPAND, 5 )
+
+		self.run = wx.Button( self, wx.ID_ANY, u"Run", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer32.Add( self.run, 0, wx.ALL|wx.EXPAND, 5 )
+
+		self.analysis = wx.Button( self, wx.ID_ANY, u"Analyse", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer32.Add( self.analysis, 0, wx.ALL|wx.EXPAND, 5 )
+
+
+		fgSizer6.Add( bSizer32, 1, wx.EXPAND, 5 )
+
+
+		bSizer58.Add( fgSizer6, 0, wx.ALL|wx.EXPAND|wx.FIXED_MINSIZE, 4 )
+
+		fgSizer3 = wx.FlexGridSizer( 2, 6, 0, 0 )
+		fgSizer3.SetFlexibleDirection( wx.BOTH )
+		fgSizer3.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
+
+		self.text1 = wx.StaticText( self, wx.ID_ANY, u"Average Angle:", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.text1.Wrap( -1 )
+
+		fgSizer3.Add( self.text1, 1, wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT, 5 )
+
+		self.mean_angle = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		fgSizer3.Add( self.mean_angle, 1, wx.EXPAND|wx.BOTTOM, 5 )
+
+		self.text2 = wx.StaticText( self, wx.ID_ANY, u"Average RMS(mm):", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.text2.Wrap( -1 )
+
+		fgSizer3.Add( self.text2, 1, wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT, 5 )
+
+		self.mean_RMS = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		fgSizer3.Add( self.mean_RMS, 1, wx.EXPAND|wx.BOTTOM, 5 )
+
+		self.m_staticText112 = wx.StaticText( self, wx.ID_ANY, u"Average Height(mm):", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText112.Wrap( -1 )
+
+		fgSizer3.Add( self.m_staticText112, 1, wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT, 5 )
+
+		self.height = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		fgSizer3.Add( self.height, 0, wx.ALL, 5 )
+
+		self.m_staticText11 = wx.StaticText( self, wx.ID_ANY, u"Number of prism:", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText11.Wrap( -1 )
+
+		fgSizer3.Add( self.m_staticText11, 1, wx.TOP|wx.BOTTOM|wx.LEFT|wx.EXPAND, 5 )
+
+		self.prism_number = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		fgSizer3.Add( self.prism_number, 1, wx.EXPAND|wx.BOTTOM, 5 )
+
+		self.m_staticText111 = wx.StaticText( self, wx.ID_ANY, u"Period(1/mm):", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText111.Wrap( -1 )
+
+		fgSizer3.Add( self.m_staticText111, 1, wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT, 5 )
+
+		self.period = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		fgSizer3.Add( self.period, 0, wx.ALL, 5 )
+
+		self.m_staticText12 = wx.StaticText( self, wx.ID_ANY, u"Assessment Length(mm):", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_staticText12.Wrap( -1 )
+
+		fgSizer3.Add( self.m_staticText12, 1, wx.EXPAND|wx.TOP|wx.BOTTOM|wx.LEFT, 5 )
+
+		self.length = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		fgSizer3.Add( self.length, 0, wx.ALL, 5 )
+
+
+		bSizer58.Add( fgSizer3, 0, 0, 5 )
+
+		bSizer4 = wx.BoxSizer( wx.VERTICAL )
+
+		self.output_figure = wx.StaticBitmap( self, wx.ID_ANY, wx.NullBitmap, wx.DefaultPosition, wx.DefaultSize, wx.BORDER_DEFAULT )
+		bSizer4.Add( self.output_figure, 1, wx.ALL|wx.EXPAND, 5 )
+
+
+		bSizer58.Add( bSizer4, 0, 0, 5 )
+
+
+		self.SetSizer( bSizer58 )
+		self.Layout()
+
+		self.Centre( wx.BOTH )
+
+		# Connect Events
+		self.run.Bind( wx.EVT_BUTTON, self.function_run )
+		self.analysis.Bind( wx.EVT_BUTTON, self.function_analysis )
+
+	def __del__( self ):
+		pass
+
+
+	# Virtual event handlers, overide them in your derived class
+	def function_run( self, event ):
+		event.Skip()
+
+	def function_analysis( self, event ):
+		event.Skip()
