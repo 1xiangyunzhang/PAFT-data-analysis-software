@@ -1,0 +1,327 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Oct 12 13:01:21 2020
+
+@author: Xiangyun Zhang
+"""
+import wxGUI 
+import wx
+from matplotlib import pyplot as plt
+from matplotlib import font_manager
+import numpy as np 
+import matplotlib.pyplot as plt
+import scipy.signal as signal
+from scipy.optimize import leastsq
+from scipy import optimize
+import xlwt
+import matplotlib.image as mpimg
+
+class CalcFrame(wxGUI.MyFrame1): 
+    def __init__(self,parent): 
+        wxGUI.MyFrame1.__init__(self,parent)  
+      
+    
+    def function_run(self,event):
+      
+        #important parameters
+        # set the fitting range
+        limit_lift = int(self.limit_lift.GetValue()) 
+        limit_right = int(self.limit_right.GetValue()) 
+        # set the searching range
+        Search_size = int(self.Search_size.GetValue()) # a parameter, which is connected to the search area, in leastsq function
+        # set the analysis range 
+        range_low = int(float(self.range_low.GetValue())*1000) 
+        range_high = int(float(self.range_high.GetValue())*1000) 
+        slop_switch = int(self.slop_switch.GetValue()) # 0: the lines with positive slop will be recognized as prism;1:the lines with  negative slop will be recognized as the prism
+        # display the extremum or not
+        extremum_switch = int(self.display_extremum.GetValue())
+        # display the fitting range or not
+        fitting_switch = int(self.display_fitting_range.GetValue()) 
+        filename = self.filename.GetPath()
+
+        # imread the document
+        fin=open(filename)# change the file name here
+        a=fin.readlines()
+        fout=open('newa.txt','w')
+        # remove the useless data
+        b=''.join(a[11:-2])
+        fout.write(b)
+        fin.close()
+        fout.close()
+        
+        # process the input data, change the 1d data into 2d data
+        c = np.loadtxt('newa.txt')
+        half_number = np.size(c)/2
+        half_number = np.int(half_number)
+        
+        detection_x = c[range_low:range_high] - c[0]
+        detection_z = c[half_number+range_low:half_number+range_high]
+        detection_value = np.vstack((c[:half_number]- c[0],c[-half_number:]))
+        detection_value = np.transpose(detection_value[:,range_low:range_high])
+        
+        
+        # find the local maximum and minimun point
+        point_max_x = signal.argrelextrema(detection_z,np.greater, order=Search_size)[0]
+        point_min_x = signal.argrelextrema(detection_z,np.less, order=Search_size)[0]
+        point_max_z = detection_z[signal.argrelextrema(detection_z, np.greater, order=Search_size)]
+        point_min_z = detection_z[signal.argrelextrema(detection_z, np.less, order=Search_size)]
+        point_x = point_max_x.tolist() +  point_min_x.tolist()
+        point_x = np.sort(point_x)
+        point_x = point_x.tolist()
+        
+        # build the blank list
+        list_distance = []
+        list_max_distance = []
+        list_min_distance = []
+        sub_parts = []
+        list_height = []
+        
+     
+        
+        # store the data in one list
+        for i in range(0,len(point_max_x)-1):
+            distance = point_max_x[i+1] - point_max_x[i]
+            list_max_distance.append(distance)
+
+        for i in range(0,len(point_min_x)-1):
+            distance = point_min_x[i+1] - point_min_x[i]
+            list_min_distance.append(distance)
+            
+        period = 1/((np.mean(list_max_distance)+np.mean(list_max_distance))*0.001/2)
+        for i in range(0,len(point_x)-1):
+            distance = point_x[i+1] - point_x[i]
+            list_distance.append(distance)
+            
+        mean_distance = int(np.mean(list_distance))
+        
+        # Store the data of each prism separately, add the limitation to filter the noise
+        for i in range(0,len(point_x)-1):
+            if 30 < list_distance[i]:
+                parts = detection_value[point_x[i]:point_x[i+1],:]
+                sub_parts.append(parts)
+                height = np.abs(detection_z[point_x[i+1]]-detection_z[point_x[i]])
+                if 0.001 < height:
+                    list_height.append(height)
+        mean_height = np.mean(list_height)
+              
+        # build the blank list
+        List = []
+        list_k = []
+        list_b = []
+        list_angle = []
+        list_rms = []
+        list_sumerro = []
+        ret = []
+        cutpoint_lift_x = []
+        cutpoint_lift_y = []
+        cutpoint_right_x = []
+        cutpoint_right_y = []
+        
+        # fit every parts
+        def err(p, x, y):
+            return p[0] * x +p[1] - y
+        j = int(0)
+        
+        for i in range(0, len(sub_parts)-1):
+            p0 = [-0.46,0]
+            d = sub_parts[i]    
+            xi=d[limit_lift:limit_right,0]
+            yi=d[limit_lift:limit_right,1]
+            ret = leastsq(err, p0, args = (xi,yi))
+            k, b = ret[0]
+            
+            # choose the valuence of slop
+            if slop_switch == 1:
+                if k < -0.018:
+                    angle = np.arctan(k)
+                    List.append(ret)
+                    list_k.append(k)
+                    list_b.append(b)
+                    angle = np.degrees(angle)
+                    list_angle.append(angle)
+                    
+                # calculate the RMS of every prism
+                    y = k * xi + b
+                    sum_erro = sum((y-yi)**2)
+                    sum_erro = sum_erro/(len(xi[limit_lift:limit_right])+1)
+                    rms_erro = np.sqrt(sum_erro)
+                    list_rms.append(rms_erro)
+                # plot the subline
+                    cutpoint_x = d[limit_lift,0]
+                    cutpoint_y = d[limit_lift,1]
+                    cutpoint_lift_x.append(cutpoint_x)
+                    cutpoint_lift_y.append(cutpoint_y)
+                   
+                    cutpoint_x = d[limit_right,0]
+                    cutpoint_y = d[limit_right,1]
+                    cutpoint_right_x.append(cutpoint_x)
+                    cutpoint_right_y.append(cutpoint_y)
+            else:
+                if k > 0.018:
+                    
+                    angle = np.arctan(k)
+                    List.append(ret)
+                    list_k.append(k)
+                    list_b.append(b)
+                    angle = np.degrees(angle)
+                    list_angle.append(angle)
+                # calculate the RMS of every prism
+                    y = k * xi + b
+                    sum_erro = sum((y-yi)**2)
+                    sum_erro = sum_erro/(len(xi[limit_lift:limit_right])+1)
+                    rms_erro = np.sqrt(sum_erro)
+                    list_rms.append(rms_erro)
+                # plot the subline
+                    cutpoint_x = d[limit_lift,0]
+                    cutpoint_y = d[limit_lift,1]
+                    cutpoint_lift_x.append(cutpoint_x)
+                    cutpoint_lift_y.append(cutpoint_y)
+                   
+                    cutpoint_x = d[limit_right,0]
+                    cutpoint_y = d[limit_right,1]
+                    cutpoint_right_x.append(cutpoint_x)
+                    cutpoint_right_y.append(cutpoint_y)
+                    
+                else:
+                    continue
+        # output the angles, rms and heights result as txt file
+        array1 = np.array(list_angle)
+        array2 = np.array(list_rms)
+        array3 = np.transpose(np.array(list_height))
+        
+        result = np.vstack((array1,array2))
+        result = np.transpose(result)
+        np.savetxt('results.txt',result)
+        np.savetxt('height.txt',array3)
+        
+        # plot the prism profile
+        plt.figure(figsize=(10,4))
+        plt.plot(detection_x,detection_z)
+        plt.xlabel('Position/mm')
+        plt.ylabel('Height/mm')
+        plt.title('Profile')  
+        
+        
+         # mark the local extremum and the cutpoint in the profile, and save the image
+        if extremum_switch == 1: 
+            if fitting_switch == 0:
+       
+                type1 = plt.scatter(detection_x[point_max_x[:]],point_max_z, s = 20, c = 'red', marker = 'o')
+                type2 = plt.scatter(detection_x[point_min_x[:]],point_min_z, s = 20, c = 'lime', marker = '+')
+                plt.legend((type1, type2), ('Local maximum', 'Local minimum'), loc=0)
+            
+            else: 
+                type1 = plt.scatter(detection_x[point_max_x[:]],point_max_z, s = 20, c = 'red', marker = 'o')
+                type2 = plt.scatter(detection_x[point_min_x[:]],point_min_z, s = 20, c = 'lime', marker = '+')
+                type3 = plt.scatter(cutpoint_lift_x,cutpoint_lift_y, s = 30, c = 'black', marker = '_')
+                plt.scatter(cutpoint_right_x,cutpoint_right_y, s = 30, c = 'black', marker = '_')
+                plt.legend((type1, type2,type3),('Local maximum', 'Local minimum','Cutting point'), loc=0)
+        
+        else : 
+            if fitting_switch == 1:
+                l1 = plt.scatter(cutpoint_lift_x,cutpoint_lift_y, s = 30, c = 'black', marker = '_')
+                plt.scatter(cutpoint_right_x,cutpoint_right_y, s = 30, c = 'black', marker = '_')
+                plt.legend(handles= [l1], labels = ['Cutting point'], loc=0)
+        plt.tight_layout()
+        plt.savefig('MyFig.jpg')
+        plt.show()
+    
+        # save the results as excel file
+        def save(data1,data2,path):
+            f = xlwt.Workbook()  
+            sheet1 = f.add_sheet(u'sheet1', cell_overwrite_ok=True)  # creat sheet
+            sheet1.write(0,0,'Nr.')
+            sheet1.write(0,1,'Angle')
+            sheet1.write(0,2,'RMS')
+            sheet1.write(0,3,'Height')
+            
+            [h, l] = data1.shape  # h is row，l is column
+            for i in range(h):
+                for j in range(l):
+                    sheet1.write(i+1, j+1, data1[i, j])
+                    sheet1.write(i+1,0,i+1)
+            f.save(path)
+        save(result,array3,'results.xls')
+        
+        # output the value and image in windows
+        mean_angle = round(np.mean(list_angle),3)
+        mean_rms = round(np.mean(list_rms),7)
+        print('The mean angle is', mean_angle,'\n','The mean RMS is', mean_rms)
+        self.mean_angle.SetValue (str(mean_angle)) 
+        self.mean_RMS.SetValue (str(mean_rms))
+        self.prism_number.SetValue (str(len(list_angle)))
+        self.period.SetValue (str(round(period,3)))
+        self.length.SetValue(str(round(half_number*0.001,2)))
+        self.height.SetValue(str(round(mean_height,4)))
+        
+        
+        
+        image3 = wx.Image('MyFig.jpg', wx.BITMAP_TYPE_JPEG)
+        temp3 = image3.ConvertToBitmap()
+        self.output_figure.SetBitmap(temp3)
+        
+        plt.figure()
+        x = np.arange(0, len(list_angle), 1)
+        y_angle = list_angle
+        plt.title('Angle')
+        plt.xlabel('Number of prism')
+        plt.ylabel('Degree')
+        plt.scatter(x,y_angle,s = 20, c = 'black', marker = 'o')
+        plt.savefig('Angle.jpg')
+        plt.close()
+        
+        plt.figure()
+        x = np.arange(0, len(list_rms), 1)
+        y_rms = list_rms
+        plt.title('RMS')
+        plt.xlabel('Number of prism')
+        plt.ylabel('RMS/mm')
+        plt.scatter(x,y_rms,s = 20, c = 'black', marker = 'o')
+        plt.savefig('RMS.jpg')
+        plt.close()
+         
+        
+        plt.figure()
+        x = np.arange(0, len(list_height), 1)
+        y_height = list_height
+        plt.title('Height')
+        plt.xlabel('Number of prism')
+        plt.ylabel('Height/mm')
+        plt.scatter(x,y_height,s = 20, c = 'black', marker = 'o')
+        plt.savefig('Height.jpg')
+        plt.close()
+         
+    # combine the RMS, angle and height image together
+    def function_analysis(self,event):
+        
+        plt.figure
+        plt.subplot(1,3,1)
+        RMS = mpimg.imread('RMS.jpg')# 读取和代码处于同一目录下的 lena.png
+        RMS.shape #(512, 512, 3)
+        plt.imshow(RMS) # 显示图片
+        plt.axis('off') # 不显示坐标
+        
+        plt.subplot(1,3,2)
+        Angle = mpimg.imread('Angle.jpg') 
+        Angle.shape #(512, 512, 3)
+        plt.imshow(Angle) # 显示图片
+        plt.axis('off') # 不显示坐标轴
+        
+        plt.subplot(1,3,3)
+        Height = mpimg.imread('Height.jpg') 
+        Height.shape #(512, 512, 3)
+        plt.imshow(Height) # 显示图片
+        plt.axis('off') # 不显示坐标轴
+        plt.tight_layout()#调整整体空白
+        plt.subplots_adjust(wspace =0, hspace =0)
+        plt.show()
+    
+def main():        
+    app = wx.App(False) 
+    frame = CalcFrame(None) 
+    frame.Show(True) 
+    #start the applications 
+    app.MainLoop() 
+ 
+if __name__ == '__main__':
+    main()
